@@ -9,4 +9,6 @@ Track Daily Expenses
 2. Open 'index.html' in your browser
 
 ## Usage 
-1. Enter "amount" ,pick an "category"and add an "description"
+1. Enter **amount** ,pick an **category** and add an **description**.
+2. Click **submit** to add the expense to the table.
+3. Click **Delete** to delete the expense.
