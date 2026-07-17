@@ -1,50 +1,49 @@
-const form = document.querySelector('form');
-const amount = document.querySelector("#Amount");
-const category = document.querySelector("#category");
-const description = document.querySelector("#description");
-const tbody = document.querySelector("tbody");
-const totalDisplay = document.querySelector("#total");
+const API_URL = "http://127.0.0.1:8000";
+const list = document.getElementById("list");
 
-let total = 75; // matches the pre-existing Food row in the HTML
-updateTotal();
+// GET — load expenses from the server and show them
+async function loadExpenses() {
+    const res = await fetch(`${API_URL}/expenses`);
+    const expenses = await res.json();
 
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  if (!amount.value || !description.value.trim()) {
-    alert("Please fill in all fields");
-    return;
-  }
-
-  const expenseAmount = parseFloat(amount.value);
-
-  const row = document.createElement("tr");
-  row.innerHTML = `
-    <td>${category.value}</td>
-    <td>${expenseAmount}</td>
-    <td>${description.value}</td>
-    <td><button class="delete-btn">Delete :)</button></td>
-  `;
-  row.dataset.amount = expenseAmount;
-
-  tbody.appendChild(row);
-
-  total += expenseAmount;
-  updateTotal();
-
-  form.reset();
-});
-
-tbody.addEventListener("click", (e) => {
-  if (e.target.classList.contains("delete-btn")) {
-    const row = e.target.closest("tr");
-    const rowAmount = parseFloat(row.dataset.amount) || parseFloat(row.children[1].textContent) || 0;
-    total -= rowAmount;
-    row.remove();
-    updateTotal();
-  }
-});
-
-function updateTotal() {
-  totalDisplay.textContent = `Total: $${total.toFixed(2)}`;
+    list.innerHTML = "";
+    expenses.forEach((expense) => {
+        const li = document.createElement("li");
+        li.innerHTML = `${expense.name} - Rs. ${expense.amount}
+            <button onclick="removeExpense(${expense.id})">Remove</button>`;
+        list.appendChild(li);
+    });
 }
+
+// POST — send a new expense to the server
+async function addExpense() {
+    const name = document.getElementById("name").value;
+    const amount = document.getElementById("amount").value;
+
+    await fetch(`${API_URL}/expenses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, amount: Number(amount) }),
+    });
+
+    loadExpenses(); // refresh the list on screen
+}
+
+// Assignment --> PUT — update an existing expense  
+// async function updateExpense(id, name, amount) {
+//     await fetch(`${API_URL}/expenses/${id}`, {
+//         method: "PUT",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ name, amount: Number(amount) }),
+//     });
+
+//     loadExpenses();
+// }
+
+// DELETE — remove one expense from the server
+async function removeExpense(id) {
+    await fetch(`${API_URL}/expenses/${id}`, { method: "DELETE" });
+    loadExpenses();
+}
+
+loadExpenses(); // show whatever's already on the server when the page opens
