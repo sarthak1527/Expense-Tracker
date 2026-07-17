@@ -1,49 +1,180 @@
 const API_URL = "http://127.0.0.1:8000";
-const list = document.getElementById("list");
 
-// GET — load expenses from the server and show them
+const form = document.getElementById("expenseForm");
+const amountInput = document.getElementById("amount");
+const categoryInput = document.getElementById("category");
+const descriptionInput = document.getElementById("description");
+
+const expenseList = document.getElementById("expenseList");
+const total = document.getElementById("total");
+
+// Stores the id of the expense currently being edited
+let editId = null;
+
+// Load all expenses when the page opens
+loadExpenses();
+
+
+// =======================
+// GET ALL EXPENSES
+// =======================
+
 async function loadExpenses() {
-    const res = await fetch(`${API_URL}/expenses`);
-    const expenses = await res.json();
 
-    list.innerHTML = "";
-    expenses.forEach((expense) => {
-        const li = document.createElement("li");
-        li.innerHTML = `${expense.name} - Rs. ${expense.amount}
-            <button onclick="removeExpense(${expense.id})">Remove</button>`;
-        list.appendChild(li);
+    const response = await fetch(`${API_URL}/expenses`);
+
+    const expenses = await response.json();
+
+    expenseList.innerHTML = "";
+
+    let totalExpense = 0;
+
+    expenses.forEach(expense => {
+
+        totalExpense += expense.amount;
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${expense.category}</td>
+            <td>Rs. ${expense.amount}</td>
+            <td>${expense.description}</td>
+
+            <td>
+
+                <button
+                    class="edit-btn"
+                    onclick="editExpense(${expense.id})">
+
+                    <i class="fa-solid fa-pen"></i>
+
+                </button>
+
+                <button
+                    class="delete-btn"
+                    onclick="deleteExpense(${expense.id})">
+
+                    <i class="fa-solid fa-trash"></i>
+
+                </button>
+
+            </td>
+        `;
+
+        expenseList.appendChild(row);
+
     });
+
+    total.innerHTML = `Total : Rs. ${totalExpense}`;
+
 }
+// =======================
+// ADD OR UPDATE EXPENSE
+// =======================
 
-// POST — send a new expense to the server
-async function addExpense() {
-    const name = document.getElementById("name").value;
-    const amount = document.getElementById("amount").value;
+form.addEventListener("submit", async function (event) {
 
-    await fetch(`${API_URL}/expenses`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, amount: Number(amount) }),
-    });
+    event.preventDefault();
 
-    loadExpenses(); // refresh the list on screen
-}
+    const expense = {
 
-// Assignment --> PUT — update an existing expense  
-// async function updateExpense(id, name, amount) {
-//     await fetch(`${API_URL}/expenses/${id}`, {
-//         method: "PUT",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ name, amount: Number(amount) }),
-//     });
+        category: categoryInput.value,
 
-//     loadExpenses();
-// }
+        amount: Number(amountInput.value),
 
-// DELETE — remove one expense from the server
-async function removeExpense(id) {
-    await fetch(`${API_URL}/expenses/${id}`, { method: "DELETE" });
+        description: descriptionInput.value
+
+    };
+
+    // If editId is null, add a new expense
+    if (editId === null) {
+
+        await fetch(`${API_URL}/expenses`, {
+
+            method: "POST",
+
+            headers: {
+
+                "Content-Type": "application/json"
+
+            },
+
+            body: JSON.stringify(expense)
+
+        });
+
+    }
+
+    // Otherwise update the existing expense
+    else {
+
+        await fetch(`${API_URL}/expenses/${editId}`, {
+
+            method: "PUT",
+
+            headers: {
+
+                "Content-Type": "application/json"
+
+            },
+
+            body: JSON.stringify(expense)
+
+        });
+
+        editId = null;
+
+        form.querySelector("button").innerText = "Add Expense";
+
+    }
+
+    form.reset();
+
     loadExpenses();
+
+});
+
+
+// =======================
+// DELETE EXPENSE
+// =======================
+
+async function deleteExpense(id) {
+
+    const confirmDelete = confirm("Delete this expense?");
+
+    if (!confirmDelete)
+        return;
+
+    await fetch(`${API_URL}/expenses/${id}`, {
+
+        method: "DELETE"
+
+    });
+
+    loadExpenses();
+
 }
 
-loadExpenses(); // show whatever's already on the server when the page opens
+
+// =======================
+// EDIT EXPENSE
+// =======================
+
+async function editExpense(id) {
+
+    const response = await fetch(`${API_URL}/expenses/${id}`);
+
+    const expense = await response.json();
+
+    categoryInput.value = expense.category;
+
+    amountInput.value = expense.amount;
+
+    descriptionInput.value = expense.description;
+
+    editId = expense.id;
+
+    form.querySelector("button").innerText = "Update Expense";
+
+}
