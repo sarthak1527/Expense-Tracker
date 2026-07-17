@@ -14,12 +14,12 @@ app.add_middleware(
 )
 
 
-
 # Our "database" — just a list, kept in memory
 class Expense(BaseModel):
     id: int = 0
-    name: str
+    category: str
     amount: float
+    description: str
 
 
 expenses: List[Expense] = []
@@ -48,13 +48,13 @@ def add_expense(expense: Expense):
     return expense
 
 
-# Assignment --> Please take the help of AI make a button beside delete button that has the edit logo, connect it with frontend using fetch and push it to your github
 @app.put("/expenses/{expense_id}")
 def update_expense(expense_id: int, updated_expense: Expense):
     for e in expenses:
         if e.id == expense_id:
-            e.name = updated_expense.name
+            e.category = updated_expense.category
             e.amount = updated_expense.amount
+            e.description = updated_expense.description
             return e
     return {"error": "not found"}
 
